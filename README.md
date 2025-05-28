@@ -1,72 +1,72 @@
-# Техническое задание для разработки сервиса авторизации
+# Technical Specification for Authorization Service Development
 
-## Цель проекта
-Создать сервис авторизации на Go для регистрации, аутентификации, управления токенами и предоставления информации о пользователе с использованием PostgreSQL и Redis.
+## Project Goal
+Create an authorization service in Go for registration, authentication, token management, and providing user information using PostgreSQL and Redis.
 
-## Требования
+## Requirements
 
-### Технологический стек
-- **Язык**: Go (последняя стабильная версия)
-- **База данных**:
-  - PostgreSQL для хранения информации о пользователях
-  - Redis для хранения access/refresh токенов и blacklisted токенов
-- **Библиотеки и фреймворки**:
-  - `gin` или `fiber` для HTTP-сервера
-  - `sqlx` или `pgx` для работы с PostgreSQL
-  - `go-redis` для работы с Redis
-  - `jwt` для генерации и валидации токенов
-  - `zap` или `logrus` для логирования
-  - `testify` для тестирования
-- **Инструменты**:
-  - `golang-migrate` для миграций БД
-  - Docker для контейнеризации сервиса и зависимостей
-  - `godotenv` для управления конфигурацией
+### Technology Stack
+- **Language**: Go (latest stable version)
+- **Database**:
+  - PostgreSQL for storing user information
+  - Redis for storing access/refresh tokens and blacklisted tokens
+- **Libraries and Frameworks**:
+  - `gin` or `fiber` for HTTP server
+  - `sqlx` or `pgx` for working with PostgreSQL
+  - `go-redis` for working with Redis
+  - `jwt` for token generation and validation
+  - `zap` or `logrus` for logging
+  - `testify` for testing
+- **Tools**:
+  - `golang-migrate` for database migrations
+  - Docker for containerizing the service and dependencies
+  - `godotenv` for configuration management
 
-### Функциональные требования
-1. **Эндпоинты**:
+### Functional Requirements
+1. **Endpoints**:
    - **/signup** (POST):
-     - Регистрация пользователя.
-     - Входные данные: email, пароль, имя.
-     - Хеширование пароля (bcrypt).
-     - Сохранение в PostgreSQL.
-     - Возврат: статус 201, JSON с ID пользователя.
+     - User registration.
+     - Input data: email, password, name.
+     - Password hashing (bcrypt).
+     - Save to PostgreSQL.
+     - Return: status 201, JSON with user ID.
    - **/signin** (POST):
-     - Аутентификация пользователя.
-     - Входные данные: email, пароль.
-     - Проверка пароля, генерация access (JWT, 15 мин) и refresh (Redis, 7 дней) токенов.
-     - Возврат: JSON с access токенами.
+     - User authentication.
+     - Input data: email, password.
+     - Password verification, generation of access (JWT, 15 min) and refresh (Redis, 7 days) tokens.
+     - Return: JSON with access tokens.
    - **/refresh** (POST):
-     - Обновление access токена по refresh токену.
-     - Проверка refresh токена в Redis.
-     - Автоматический logout, если refresh токен истёк (удаление из Redis).
-     - Возврат: новый access токен или ошибка.
+     - Refresh access token using refresh token.
+     - Check refresh token in Redis.
+     - Automatic logout if refresh token is expired (remove from Redis).
+     - Return: new access token or error.
    - **/logout** (POST):
-     - Выход пользователя.
-     - Добавление access токена в blacklist (Redis, TTL = время жизни токена).
-     - Удаление refresh токена из Redis.
-     - Возврат: статус 200.
+     - User logout.
+     - Add access token to blacklist (Redis, TTL = token lifetime).
+     - Remove refresh token from Redis.
+     - Return: status 200.
    - **/echo** (GET):
-     - Доступно только для авторизованных пользователей.
-     - Проверка access токена (включая blacklist).
-     - Возврат: JSON с полной информацией о пользователе (ID, email, имя).
+     - Available only for authorized users.
+     - Check access token (including blacklist).
+     - Return: JSON with complete user information (ID, email, name).
 
-### Нефункциональные требования
-1. **Логирование**:
-   - Использовать `zap` или `logrus`.
-   - Логировать все запросы, ошибки и ключевые события (регистрация, вход, выход, обновление токена).
-   - Формат: JSON, с полями: timestamp, level, message, context (например, user_id, endpoint).
-   - Вывод: stdout
+### Non-functional Requirements
+1. **Logging**:
+   - Use `zap` or `logrus`.
+   - Log all requests, errors, and key events (registration, login, logout, token refresh).
+   - Format: JSON, with fields: timestamp, level, message, context (e.g., user_id, endpoint).
+   - Output: stdout
 
-2. **Обработка ошибок**:
-   - Единый формат ошибок: JSON `{ "error": "описание" }`.
-   - HTTP-коды: 400 (невалидные данные), 401 (неавторизован), 403 (запрещено),404(not found), 500 (внутренняя ошибка).
-   - Обработка ошибок базы данных, Redis, JWT.
+2. **Error Handling**:
+   - Unified error format: JSON `{ "error": "description" }`.
+   - HTTP codes: 400 (invalid data), 401 (unauthorized), 403 (forbidden), 404 (not found), 500 (internal error).
+   - Handle database errors, Redis errors, JWT errors.
 
-3. **Тестирование**:
-   - Модульные тесты для бизнес-логики (хеширование, генерация токенов and etc.).
-   - Тесты для обработки ошибок (невалидные токены, истёкшие токены, неверные пароли and etc).
+3. **Testing**:
+   - Unit tests for business logic (hashing, token generation, etc.).
+   - Tests for error handling (invalid tokens, expired tokens, incorrect passwords, etc.).
 
-4. **Миграции**:
-   - Использовать `golang-migrate` or `goose`.
-   - Миграции для создания таблицы `users`.
-   - Поддержка отката (down миграции).
+4. **Migrations**:
+   - Use `golang-migrate` or `goose`.
+   - Migrations for creating `users` table.
+   - Support for rollback (down migrations).
